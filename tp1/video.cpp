@@ -59,24 +59,38 @@ void showImage( const char* windowName, const cv::Mat *in)
 
 void difference_absolue( const cv::Mat& src1, const cv::Mat& src2, cv::Mat& dest)
 {
-	if(src1.isContinuous()  && 
-           src2.isContinuous() && 
-	   src1.cols * src1.rows == src2.cols * src2.rows) {
-		uchar *im1 = src1.data;
-		uchar *im2 = src2.data;
-		uchar *res = dest.data;
-		
-		for( int i = 0; i < dest.cols * dest.rows; i++) {
-			res[i] = abs(im1[i] - im2[i]);
-		} 
-		
+	dest = src1.clone();
+   	int nPixels = src1.cols * src2.rows;
+	uchar *im1 = src1.data;
+	uchar *im2 = src2.data;
+	uchar *res = dest.data;
 	
+	for( int i = 0; i < nPixels; i++/* = i+3*/)
+	{
+		res[i] = abs(im1[i] - im2[i]);
+		/*res[i + 1] = abs(im1[i + 1] - im2[i + 1]);
+		res[i + 2] = abs(im1[i + 2] - im2[i + 2]);*/
+	}  
+	
+}
+
+float somme_normalisee(const cv::Mat& src)
+{
+	int nPixels = src.cols * src.rows;
+	float somme = 0.f;
+	uchar *im1 = src.data;
+
+	for (int i = 0; i < nPixels; ++i)
+	{
+		somme += im1[i]/256;
 	}
+
+	return somme / nPixels;
 }
 
 int main(int argc, char *argv[])
 {	
-	/*if(argc < 2)
+	if(argc < 2)
 		return -1;
 	// disable buffer on stdout to make 'printf' outputs
 	// immediately displayed in GUI-console
@@ -84,17 +98,25 @@ int main(int argc, char *argv[])
 
 	// initializations section
 	
-	char * video = argv[1];
+	char * nom_video = argv[1];
 
 	//cv::VideoCapture capture_block8("/Shared/TP_VTDVR/resources/video.avi");
-	cv::VideoCapture capture_block8(video);
+	cv::VideoCapture capture_block8(nom_video);
 	if( ! capture_block8.isOpened() )
 	{
-		printf( "Failed to open %s video file.\n", "/Shared/TP_VTDVR/resources/video.avi");
+		printf( "Failed to open %s video file.\n", nom_video);
 		return -1;
 	}
 
+	//cv::VideoWriter videoWriter_block6( "output0.mpeg", "PIM1", 25.0);
+	
+	cv::Mat video_NB, video_NB_precedent;
+	cv::Mat diff_Video;
+	cv::Mat video;
+	float somme = 0.f, new_somme = 0.f;
+	int scene = 0;
 	int key = 0;
+	float Tr = 100;
 	bool paused = false;
 	bool goOn = true;
 	while( goOn )
@@ -107,12 +129,27 @@ int main(int argc, char *argv[])
 			printf("End of video file.\n");
 			break;
 		}
-		cv::Mat block1_out1;
-		readImage( "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/guardians.jpg", &block1_out1);
+	//	readImage( "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/guardians.jpg", &video);
 		showImage( "block2 (ESC to stop, SPACE to pause)", &block8_out1);
-		cv::Mat block4_out1;
-		cv::cvtColor( *(&block8_out1), *(&block4_out1), CV_BGR2GRAY, 0);
-		showImage( "block10 (ESC to stop, SPACE to pause)", &block4_out1);
+		cv::cvtColor( *(&block8_out1), *(&video_NB), CV_BGR2GRAY, 0);
+
+		difference_absolue(video_NB, video_NB_precedent, diff_Video);
+		new_somme = somme_normalisee(diff_Video);
+
+		showImage( "block10 (ESC to stop, SPACE to pause)", &diff_Video);
+/*
+		if(fabs(somme - new_somme) > Tr) {
+			printf("New Scene !\n");
+			scene++;
+			//std::string s = SSTR(scene);
+			s = "output" + s + ".mpeg";
+			videoWriter_block6.setFileName(s.c_str());
+		}
+
+		if( ! saveToVideo( &videoWriter_block6, &video_NB_precedent) ) {
+			printf("Failed to write frame to video file.\n");
+			break;
+		}*/
 
 		if( paused )
 			key = cv::waitKey(0);
@@ -122,25 +159,10 @@ int main(int argc, char *argv[])
 			paused = ! paused;
 		else if( key != -1 )
 			goOn = false;
+
+		video_NB_precedent = video_NB.clone();
 	}
 
-	// cleanings section
-*/
-
-	cv::Mat im1;
-	readImage( "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/seq-0015.jpg", &im1);
-	//showImage( "block2 (ESC to stop, SPACE to pause)", &block8_out1);
-	cv::Mat im2;
-	readImage( "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/seq-0016.jpg", &im2);
-	cv::Mat res = im1.clone();
-	difference_absolue(im1,im2,res);
-	/*cv::namedWindow("im1 (ESC to stop, SPACE to pause)");
-	cv::namedWindow("im2 (ESC to stop, SPACE to pause)");*/
-	cv::namedWindow("res (ESC to stop, SPACE to pause)");
-	showImage( "res (ESC to stop, SPACE to pause)", &res);
-	/*showImage( "im1 (ESC to stop, SPACE to pause)", &im1);
-	showImage( "im2 (ESC to stop, SPACE to pause)", &im2);*/
-	cv::waitKey(0);
 	return 0;
 }
 
