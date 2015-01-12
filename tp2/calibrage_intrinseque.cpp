@@ -41,14 +41,13 @@ void cameraUVC_getFrame( apicamera::CameraUVC *camera, cv::Mat *out1)
 class IntrinsicChessboardCalibrator
 {
 public:
-	IntrinsicChessboardCalibrator( unsigned int _cbWidth, unsigned int _cbHeight, int _image_count, const char *_intrinsicFileName)
+	IntrinsicChessboardCalibrator( unsigned int _cbWidth, unsigned int _cbHeight, int _image_count, double _taille_carreau ,const char *_intrinsicFileName)
 	{
-	std::cout<<_cbWidth <<" "<<_cbHeight<<" "<<_image_count<<std::endl;
 		// initialize camera to store intrinsic parameters
 		camera = new apicamera::CameraOPENCV();
 
 		// initialize calibration
-		calibrator = new ChessboardCalibration( camera, _image_count, _cbWidth, _cbHeight, 1.0f);
+		calibrator = new ChessboardCalibration( camera, _image_count, _cbWidth, _cbHeight, _taille_carreau);
 		intrinsicFileName = _intrinsicFileName;
 		computingDone = false;
 	}
@@ -193,7 +192,7 @@ int main(int argc, char *argv[])
 		printf( "failed to init UVC Camera. Exiting ...\n");
 		exit(1);
 	}
-	IntrinsicChessboardCalibrator *intCal_block4 = new IntrinsicChessboardCalibrator( ligneMire, colonneMire, nbImage, "/Students/p0908892/TP_openCV/tp2/intrinsic.txt");
+	IntrinsicChessboardCalibrator *intCal_block4 = new IntrinsicChessboardCalibrator( ligneMire, colonneMire, nbImage, tailleCarreau, "intrinsics.txt");
 
 	int key = 0;
 	bool paused = false;
@@ -215,9 +214,9 @@ int main(int argc, char *argv[])
 		cv::Mat block4_out3;
 		cv::Mat block4_out4;
 		intCal_block4->processFrame( &block3_out1, &block4_out1, &block4_out2, &block4_out3, &block4_out4);
-		printMat( &block4_out1, "default", "stdout", "");
+		/*printMat( &block4_out1, "default", "stdout", "");
 		printMat( &block4_out2, "default", "stdout", "");
-		printMat( &block4_out3, "default", "stdout", "");
+		printMat( &block4_out3, "default", "stdout", "");*/
 		showImage( "block8 (ESC to stop, SPACE to pause)", &block4_out4);
 
 		if( paused )

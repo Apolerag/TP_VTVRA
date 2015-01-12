@@ -1,4 +1,3 @@
-calibrage
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
 
@@ -50,6 +49,7 @@ public:
 		// initialize calibration
 		calibrator = new ChessboardCalibration( camera, 1, _cbWidth, _cbHeight, _squareSize);
 		extrinsicFileName = _extrinsicFileName;
+		done = false;
 	}
 
 	~ExtrinsicChessboardCalibrator()
@@ -91,6 +91,13 @@ public:
 		R.copyTo(*rotation);
 		cv::Mat E( 1, 1, CV_32FC1, &(camera->extrinsicError));
 		E.copyTo(*error);
+		
+		done = true;
+	}
+	
+	bool getDone()
+	{
+		return done;
 	}
 
 protected:
@@ -99,6 +106,7 @@ protected:
 
 	ChessboardCalibration *calibrator;
 	const char *extrinsicFileName;	
+	bool done;
 };
 
 void printMat( const cv::Mat *in, const char *printingMode, const char *outputMode, const char *outputFile)
@@ -157,8 +165,14 @@ void showImage( const char* windowName, const cv::Mat *in)
 }
 
 
-int main(void)
+int main(int argc, char *argv[])
 {
+	if(argc < 5)
+		return -1; 
+	char* fichierIntrinseque = argv[1];
+	unsigned int ligneMire = atoi(argv[2]);
+	unsigned int colonneMire = atoi(argv[3]);
+	double tailleCarreau = atof(argv[4]);
 	// disable buffer on stdout to make 'printf' outputs
 	// immediately displayed in GUI-console
 	setbuf(stdout, NULL);
@@ -182,12 +196,12 @@ int main(void)
 		printf( "failed to init UVC Camera. Exiting ...\n");
 		exit(1);
 	}
-	ExtrinsicChessboardCalibrator *extCal_block9 = new ExtrinsicChessboardCalibrator( 5, 6, 3.5, "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/intrinsics.txt", "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/extrinsics.txt");
+	ExtrinsicChessboardCalibrator *extCal_block9 = new ExtrinsicChessboardCalibrator( ligneMire, colonneMire, tailleCarreau, fichierIntrinseque, "extrinsics.txt");
 
 	int key = 0;
 	bool paused = false;
 	bool goOn = true;
-	while( goOn )
+	while( goOn/* && ! extCal_block9->getDone()*/)
 	{
 		// processings section
 
@@ -204,9 +218,9 @@ int main(void)
 		cv::Mat block9_out3;
 		cv::Mat block9_out4;
 		extCal_block9->processFrame( &block3_out1, NULL, NULL, &block9_out1, &block9_out2, &block9_out3, &block9_out4);
-		printMat( &block9_out1, "default", "stdout", "");
+		/*printMat( &block9_out1, "default", "stdout", "");
 		printMat( &block9_out2, "default", "stdout", "");
-		printMat( &block9_out3, "default", "stdout", "");
+		printMat( &block9_out3, "default", "stdout", "");*/
 		showImage( "block8 (ESC to stop, SPACE to pause)", &block9_out4);
 
 		if( paused )
