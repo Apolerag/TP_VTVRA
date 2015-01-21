@@ -179,12 +179,7 @@ int main(int argc, char *argv[])
 
 	// initializations section
 
-	cv::VideoCapture capture_block2("/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/kth_walkingd1_person01.mpg");
-	if( ! capture_block2.isOpened() )
-	{
-		printf( "Failed to open %s video file.\n", "/Shared/TP_VTDVR/LIRIS-VISION/Applications/Starling/resource/kth_walkingd1_person01.mpg");
-		return -1;
-	}
+	
 	// initialize camera UVC
 	apicamera::OpenParameters openParam_block3_;
 	openParam_block3_.width = 640;
@@ -196,28 +191,21 @@ int main(int argc, char *argv[])
 		printf( "failed to init UVC Camera. Exiting ...\n");
 		exit(1);
 	}
-	ExtrinsicChessboardCalibrator *extCal_block9 = new ExtrinsicChessboardCalibrator( ligneMire, colonneMire, tailleCarreau, fichierIntrinseque, "extrinsics.txt");
+	ExtrinsicChessboardCalibrator *extCal = new ExtrinsicChessboardCalibrator( ligneMire, colonneMire, tailleCarreau, fichierIntrinseque, "extrinsics.txt");
 
 	int key = 0;
 	bool paused = false;
 	bool goOn = true;
-	while( goOn/* && ! extCal_block9->getDone()*/)
+	while( goOn/* && ! extCal->getDone()*/)
 	{
-		// processings section
-
-		cv::Mat block2_out1;
-		if( ! readVideo( &capture_block2, &block2_out1) )
-		{
-			printf("End of video file.\n");
-			break;
-		}
+		
 		cv::Mat block3_out1;
 		cameraUVC_getFrame( &camera_block3_, &block3_out1);
 		cv::Mat block9_out1;
 		cv::Mat block9_out2;
 		cv::Mat block9_out3;
 		cv::Mat block9_out4;
-		extCal_block9->processFrame( &block3_out1, NULL, NULL, &block9_out1, &block9_out2, &block9_out3, &block9_out4);
+		extCal->processFrame( &block3_out1, NULL, NULL, &block9_out1, &block9_out2, &block9_out3, &block9_out4);
 		/*printMat( &block9_out1, "default", "stdout", "");
 		printMat( &block9_out2, "default", "stdout", "");
 		printMat( &block9_out3, "default", "stdout", "");*/
@@ -235,7 +223,7 @@ int main(int argc, char *argv[])
 
 	// cleanings section
 
-	delete extCal_block9;
+	delete extCal;
 
 	return 0;
 }
