@@ -22,6 +22,7 @@ unsigned int ligneMire;
 unsigned int colonneMire;
 double tailleCarreau;
 
+ExtrinsicChessboardCalibrator *extCal;
 apicamera::CameraUVC camera;
 	
 void calculerFrustum( const float *A, const float *K, float w, float h, float *frustum)
@@ -69,10 +70,10 @@ void dessineMire( int w, int h, float sz)
 			if(i%2 == j%2 ) glColor3f(0.0f, 0.0f, 0.0f);
 			else glColor3f(1.0f, 1.0f, 1.0f);
 			
-			glVertex3f(initX + i*sz, initY + j*sz, -1.0f);
-			glVertex3f(initX + i*sz, initY + (j+1)*sz, -1.0f);
-			glVertex3f(initX + (i+1)*sz, initY + (j+1)*sz, -1.0f);
-			glVertex3f(initX + (i+1)*sz, initY + j*sz, -1.0f); 
+			glVertex3f(initX + i*sz, initY + j*sz, 0.0f);
+			glVertex3f(initX + i*sz, initY + (j+1)*sz, 0.0f);
+			glVertex3f(initX + (i+1)*sz, initY + (j+1)*sz, 0.0f);
+			glVertex3f(initX + (i+1)*sz, initY + j*sz, 0.0f); 
 		}
 	}
 	
@@ -83,46 +84,62 @@ void dessineMire( int w, int h, float sz)
 // GtoC = Global to Camera = Mire to Camera
 void calculerTransformation( const float *R, const float *T, float *GtoC)
 {
-	/*
 	// colonne 1
-	GtoC[0] = ...; 
-	GtoC[1] =
-	GtoC[2] =
-	GtoC[3] =
+	GtoC[0] = R[0];
+	GtoC[1] = R[3];
+	GtoC[2] = R[6];
+	GtoC[3] = 0;
 	
 	// colonne 2
-	GtoC[4] = ...; 
-	GtoC[5] =
-	GtoC[6] =
-	GtoC[7] =
+	GtoC[4] =  R[1];
+	GtoC[5] =	 R[4];
+	GtoC[6] = R[7];
+	GtoC[7] = 0;
 
 	// colonne 3
-	GtoC[8] = ...; 
-	GtoC[9] =
-	GtoC[10 =
-	GtoC[11] =
+	GtoC[8] = R[2];
+	GtoC[9] =	R[5];
+	GtoC[10] = R[8];		
+	GtoC[11] = 0;
 
 	// colonne 4
-	GtoC[12] = ...; 
-	GtoC[13] =
-	GtoC[15] =*/
+	GtoC[12] = T[0];
+	GtoC[13] = T[1];
+	GtoC[14] = T[2];
+	GtoC[15] = 1;
+}
+
+void calculerDirection( const float *A, const float *K, const int w, const int h, float *direction)
+{
+	float a = w/2, b=h/2;
+	direction[2] = 1/A[8];
+	direction[1] = (1/A[4]) * (b - A[5]*direction[2]);
+	direction[0] = (1/A[0]) * (a - A[1]*direction[1] - A[2]*direction[2]);
 }
 
 void glDrawFromCamera( const float *A, const float *K, const float *R, const float *T) 
 {
 	float frustum[6], GtoC[16], direction[3];
 	calculerFrustum( A, K, windowWidth, windowHeight, frustum);
-	//calculerDirection( A, K, windowWidth, windowHeight, direction);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+        calculerDirection( A, K, windowWidth, windowHeight, direction);
+        calculerTransformation( R, T, GtoC);
+ 
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
 	glFrustum( frustum[0], frustum[1], frustum[2], frustum[3], frustum[4], frustum[5]);
-
+ 
 	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef( 0.0, 0.0, -1.0);
-	dessineAxes(1.0);
-	dessineMire( 5, 4, 0.05);
+        glLoadIdentity();
+ 
+        // passe dans le repère caméra
+	gluLookAt( 0., 0., 0., direction[0], direction[1], direction[2], 0., -1., 0.);
+        // ou glMultMatrixf(transfoCameraAxisToGLAxis)
+ 
+	// passe dans le repère global
+	glMultMatrixf(GtoC);
+	
+	dessineAxes(30.0);
+	dessineMire( ligneMire, colonneMire, tailleCarreau);
 }
 
 // ------
@@ -138,43 +155,22 @@ void cbRenderScene(void)
 	// Clear the color and depth buffers.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
-	ExtrinsicChessboardCalibrator *extCal = new ExtrinsicChessboardCalibrator( ligneMire, colonneMire, tailleCarreau, fichierIntrinseque, "extrinsics.txt");
-	
-	
-	int key = 0;
-	bool paused = false;
-	bool goOn = true;
-	while( goOn)
-	{
-		cv::Mat image_camera;
-		cameraUVC_getFrame( &camera, &image_camera);
-		cv::Mat translation;
-		cv::Mat rotation;
-		cv::Mat erreur;
-		cv::Mat image_extrin;
-		extCal->processFrame( &image_camera, NULL, NULL, &translation, &rotation, &erreur, &image_extrin);
-		/*printMat( &translation, "default", "stdout", "");
-		printMat( &rotation, "default", "stdout", "");
-		printMat( &erreur, "default", "stdout", "");*/
-		showImage( " image_extrin (ESC to stop, SPACE to pause)", &image_extrin);
+	cv::Mat image_camera;
+	cameraUVC_getFrame( &camera, &image_camera);
+	cv::Mat translation;
+	cv::Mat rotation;
+	cv::Mat erreur;
+	cv::Mat image_extrin;
+	extCal->processFrame( &image_camera, NULL, NULL, &translation, &rotation, &erreur, &image_extrin);
 
-		if( paused )
-			key = cv::waitKey(0);
-		else
-			key = cv::waitKey(25);
-		if( (key & 255) == ' ' )
-			paused = ! paused;
-		else if( key != -1 )
-			goOn = false;
-		
+	showImage( " image_extrin (ESC to stop, SPACE to pause)", &image_extrin);
 	
-		// dessine dans le point de vue de la caméra
-		float dummy;
-		glDrawFromCamera( &dummy, &dummy, &dummy, &dummy);
-	}
+	glDrawFromCamera(extCal->camera->intrinsicA, extCal->camera->intrinsicK, extCal->camera->extrinsicR, extCal->camera->extrinsicT);
+
 
 	// All done drawing.  Let's show it.
 	glutSwapBuffers();
+	cvWaitKey(25);
 }
 
 
@@ -182,7 +178,7 @@ void cbRenderScene(void)
 // Callback function called when a normal key is pressed.
 void cbKeyPressed( unsigned char key, int x, int y)
 {
-	switch (key) 
+	/*switch (key) 
 	{
 		case 113: case 81: case 27: // Q (Escape) - We're outta here.
 			glutDestroyWindow(Window_ID);
@@ -196,7 +192,7 @@ void cbKeyPressed( unsigned char key, int x, int y)
 		default:
 			printf ("KP: No action for %d.\n", key);
 			break;
-	}
+	}*/
 }
 
 // ------
@@ -241,7 +237,8 @@ int main(  int argc,  char **argv)
 		printf( "failed to init UVC Camera. Exiting ...\n");
 		exit(1);
 	}
-	
+	extCal = new ExtrinsicChessboardCalibrator( ligneMire, colonneMire, tailleCarreau, fichierIntrinseque, "extrinsics.txt");
+
 	// pour eviter pb de . et , dans les floats
 	setlocale(LC_NUMERIC, "C");
 
