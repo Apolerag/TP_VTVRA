@@ -80,6 +80,17 @@ void dessineMire( int w, int h, float sz)
 	glEnd();
 }
 
+void dessineTeaPot(void)
+{
+    glColor3f(1.f, 0.f, 0.f); 
+    glutSolidTeapot(5);
+    // Flush buffers to screen
+     
+    //glFlush();        
+    // sawp buffers called because we are using double buffering 
+   // glutSwapBuffers();
+} 
+
 // calcule la transformation GtoC
 // GtoC = Global to Camera = Mire to Camera
 void calculerTransformation( const float *R, const float *T, float *GtoC)
@@ -140,6 +151,7 @@ void glDrawFromCamera( const float *A, const float *K, const float *R, const flo
 	
 	dessineAxes(30.0);
 	dessineMire( ligneMire, colonneMire, tailleCarreau);
+	dessineTeaPot();
 }
 
 // ------
@@ -166,8 +178,7 @@ void cbRenderScene(void)
 	showImage( " image_extrin (ESC to stop, SPACE to pause)", &image_extrin);
 	
 	glDrawFromCamera(extCal->camera->intrinsicA, extCal->camera->intrinsicK, extCal->camera->extrinsicR, extCal->camera->extrinsicT);
-
-
+	
 	// All done drawing.  Let's show it.
 	glutSwapBuffers();
 	cvWaitKey(25);
@@ -178,7 +189,7 @@ void cbRenderScene(void)
 // Callback function called when a normal key is pressed.
 void cbKeyPressed( unsigned char key, int x, int y)
 {
-	/*switch (key) 
+	switch (key) 
 	{
 		case 113: case 81: case 27: // Q (Escape) - We're outta here.
 			glutDestroyWindow(Window_ID);
@@ -192,7 +203,7 @@ void cbKeyPressed( unsigned char key, int x, int y)
 		default:
 			printf ("KP: No action for %d.\n", key);
 			break;
-	}*/
+	}
 }
 
 // ------
