@@ -2,6 +2,7 @@
 #include <stdio.h>   // Always a good idea.
 #include <string.h>   // Always a good idea.
 #include <locale.h>
+#include <math.h>
 
 #include <GL/gl.h>   // OpenGL itself.
 #include <GL/glu.h>  // GLU support library.
@@ -24,15 +25,47 @@ double tailleCarreau;
 
 ExtrinsicChessboardCalibrator *extCal;
 apicamera::CameraUVC camera;
-	
-void calculerFrustum( const float *A, const float *K, float w, float h, float *frustum)
+
+void unproject( const float *A,  float *pi,  float *pc)
 {
-	frustum[0] = -0.1f; // left
-	frustum[1] =  0.1f; // right
-	frustum[2] = -0.1f; // bottom
-	frustum[3] =  0.1f; // top
-	frustum[4] =  0.1f; // near
-	frustum[5] = 100.0f; // far
+	pc[0] = (pi[0] -A[2])/A[0] ;
+	pc[1] = (pi[1] -A[5])/A[4];
+	pc[2] = 1.0f;
+}
+
+float distance(const float *p, const float *q)
+{
+	return sqrt(pow(p[0]-q[0],2) + pow(p[1]-q[1],2) +pow(p[2]-q[2],2));
+}
+
+void calculerFrustum( const float *A, float w, float h, float *frustum)
+{
+	float p3Dm[3];
+	float p3D1[3],p3D2[3],p3D3[3],p3D4[3];
+	
+	float p2Dm[2];
+	float p2D1[2],p2D2[2],p2D3[2],p2D4[2];
+	
+	p2Dm[0] = w/2; p2Dm[1] = h/2; 
+	p2D1[0] = 0; p2D1[1] = h/2;
+	p2D2[0] = w; p2D2[1] = h/2;
+	p2D3[0] = w/2; p2D3[1] = 0;
+	p2D4[0] = w/2; p2D4[1] = h;
+	
+	unproject(A, p2Dm, p3Dm);
+	
+	unproject(A, p2D1, p3D1);
+	unproject(A, p2D2, p3D2);
+	unproject(A, p2D3, p3D3);
+	unproject(A, p2D4, p3D4);
+	
+	//unproject(A,K,pi,pc);
+	frustum[0] = -1.f * distance(p3Dm,p3D1);
+	frustum[1] = 1.f * distance(p3Dm,p3D2);
+	frustum[2] = -1.f * distance(p3Dm,p3D3);
+	frustum[3] = 1.f * distance(p3Dm,p3D4);
+	frustum[4] =  1.f; // near
+	frustum[5] = 10000.0f; // far
 }
 
 
@@ -82,13 +115,9 @@ void dessineMire( int w, int h, float sz)
 
 void dessineTeaPot(void)
 {
-    glColor3f(1.f, 0.f, 0.f); 
-    glutSolidTeapot(5);
-    // Flush buffers to screen
-     
-    //glFlush();        
-    // sawp buffers called because we are using double buffering 
-   // glutSwapBuffers();
+	glColor3f(1.f, 0.f, 0.f); 
+	glRotatef(90.0,1.0,0.0,0.0);
+	glutWireTeapot(5);
 } 
 
 // calcule la transformation GtoC
@@ -131,7 +160,8 @@ void calculerDirection( const float *A, const float *K, const int w, const int h
 void glDrawFromCamera( const float *A, const float *K, const float *R, const float *T) 
 {
 	float frustum[6], GtoC[16], direction[3];
-	calculerFrustum( A, K, windowWidth, windowHeight, frustum);
+	calculerFrustum( A, windowWidth, windowHeight, frustum);
+	
         calculerDirection( A, K, windowWidth, windowHeight, direction);
         calculerTransformation( R, T, GtoC);
  
@@ -181,7 +211,7 @@ void cbRenderScene(void)
 	
 	// All done drawing.  Let's show it.
 	glutSwapBuffers();
-	cvWaitKey(25);
+	cvWaitKey(5);
 }
 
 
@@ -280,7 +310,7 @@ int main(  int argc,  char **argv)
 	// cleanings section
 
 	//delete extCal;
-	
+
 	return 1;
 }
 
