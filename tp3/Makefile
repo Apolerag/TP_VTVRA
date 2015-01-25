@@ -1,6 +1,6 @@
 CC := g++
 
-EXEC := tp3_base
+EXEC := tp3
 
 INC := -I"/Shared/TP_VTDVR/LIRIS-VISION" -I"/usr/include/opencv" -I"/Shared/TP_VTDVR/LIRIS-VISION/ModulesAndBricks"
 

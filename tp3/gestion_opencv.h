@@ -1,3 +1,10 @@
+/**
+ * @file gestion_opencv.h
+ * @author Aurélien CHEMIER
+ * @date janvier 2015
+ * @brief contient les fonctions d'openCV utilisées dans le TP
+ */
+
 #include <opencv2/opencv.hpp>
 #include <stdio.h>
 
@@ -21,6 +28,9 @@
 
 // functions section
 
+/**
+ * @brief recupère la dernière image de la vidéo
+ */
 bool readVideo( cv::VideoCapture *capture, cv::Mat *out)
 {
 	bool bOk = capture->grab();
@@ -29,6 +39,9 @@ bool readVideo( cv::VideoCapture *capture, cv::Mat *out)
 	return bOk;
 }
 
+/**
+ * @brief récupre une image d'une caméra
+ */
 void cameraUVC_getFrame( apicamera::CameraUVC *camera, cv::Mat *out1)
 {
 	cv::Mat(camera->get1Frame()).copyTo(*out1);
@@ -40,6 +53,15 @@ void cameraUVC_getFrame( apicamera::CameraUVC *camera, cv::Mat *out1)
 class ExtrinsicChessboardCalibrator
 {
 public:
+	/**
+	 * @brief constructeur de la classe ExtrinsicChessboardCalibrator
+	 * 
+	 * @param _cbWidth la largeur de la mire
+	 * @param _cbHeight la hauteur de la mire
+	 * @param _squareSize la taille des carreaux de la mire
+	 * @param _intrinsicFileName fichier contenant les paramètres intrinsèques de la caméra
+	 * @param _extrinsicFileName fichier où sera stockés les paramètres extrinsèques de la caméra
+	 */
 	ExtrinsicChessboardCalibrator( unsigned int _cbWidth, unsigned int _cbHeight, float _squareSize, const char *_intrinsicFileName, const char *_extrinsicFileName)
 	{
 		// load intrinsic parameters
@@ -49,7 +71,6 @@ public:
 		// initialize calibration
 		calibrator = new ChessboardCalibration( camera, 1, _cbWidth, _cbHeight, _squareSize);
 		extrinsicFileName = _extrinsicFileName;
-		done = false;
 	}
 
 	~ExtrinsicChessboardCalibrator()
@@ -58,6 +79,17 @@ public:
 		delete camera;
 	}
 
+	/**
+	 * @brief calcule les paramètres extrinseques de l'image
+	 * 
+	 * @param inImg une image
+	 * @param intrinsicA la matrice des paramètres intrinsèques
+	 * @param intrinsicK le vecteur des coefficients de distortion
+	 * @param translation la translation repère global vers repère caméra
+	 * @param rotation a rotation repère global (repère de la mire) vers repère caméra
+	 * @param error l'erreur dans les calculs extrinseques
+	 * @param outImg l'image modifié
+	 */
 	void processFrame( const cv::Mat *inImg, const cv::Mat *intrinsicA, const cv::Mat *intrinsicK, cv::Mat *translation, cv::Mat *rotation, cv::Mat *error, cv::Mat *outImg)
 	{
 		if( (! inImg) || (! inImg->data) )
@@ -94,11 +126,6 @@ public:
 		
 		done = true;
 	}
-	
-	bool getDone()
-	{
-		return done;
-	}
 
 public:
 	// camera is used only to store/load/save intrinsic/extrinsic parameters
@@ -106,9 +133,11 @@ public:
 
 	ChessboardCalibration *calibrator;
 	const char *extrinsicFileName;	
-	bool done;
 };
 
+/**
+ * @brief écrit une matrice dans un fichier ou à l'écran
+ */
 void printMat( const cv::Mat *in, const char *printingMode, const char *outputMode, const char *outputFile)
 {
 	std::streambuf * buf;
@@ -139,6 +168,12 @@ void printMat( const cv::Mat *in, const char *printingMode, const char *outputMo
 		out << *in << std::endl;
 }
 
+/**
+ * @brief affiche l'image
+ * 
+ * @param windowName la fenetre d'affichage
+ * @param in l'image
+ */
 void showImage( const char* windowName, const cv::Mat *in)
 {
 	if( in == NULL || ( in->cols == 0 && in->rows == 0 ) )
