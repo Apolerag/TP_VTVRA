@@ -48,7 +48,7 @@ void cameraUVC_getFrame( apicamera::CameraUVC *camera, cv::Mat *out1)
 }
 
 /**
- * Encapsulate ChessboardCalibration class to made it easier to use.
+ * @brief gestion des paramètres extrinsèques de la caméra
  */
 class ExtrinsicChessboardCalibrator
 {

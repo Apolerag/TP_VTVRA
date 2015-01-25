@@ -1,0 +1,21 @@
+CHEMIER Aurélien 10908892
+
+compilation:
+make
+
+utilisation du programme:
+
+./tp3 intrinsics.txt l h t
+
+intrinsics.txt = fichier contenant les paramètres intrinsèques de la caméra
+l = nombre de ligne de la mire
+h = nombre de colonne de la mire
+t = taille des carreau de la mire
+
+documentation:
+
+doxygen Doxyfile
+
+lire la documentation:
+
+doc/html/index.html

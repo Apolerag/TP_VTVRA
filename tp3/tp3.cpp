@@ -2,7 +2,7 @@
  * @file tp3.cpp
  * @author Aurélien CHEMIER
  * @date janvier 2015
- * @brief le fichier principale du tp
+ * @brief le fichier principale du TP
  */
 #include <stdio.h>   // Always a good idea.
 #include <string.h>   // Always a good idea.
